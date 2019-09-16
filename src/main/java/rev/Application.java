@@ -16,6 +16,7 @@ import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
+import rev.account.exceptions.InvalidAccountId;
 import rev.accounts.AccountManager;
 
 import java.util.concurrent.CompletionStage;
@@ -50,7 +51,13 @@ public class Application extends AllDirectives {
         return concat(
                 pathPrefix( "hello", () ->
                 path(remaining(), (String id) ->
-                        get(() ->
-                                complete(StatusCodes.OK, AccountManager.getAccount(id), Jackson.marshaller())))));
+                        get(() -> {
+                            try {
+                                return complete(StatusCodes.OK, AccountManager.getAccount(id), Jackson.marshaller());
+                            } catch (InvalidAccountId invalidAccountId) {
+                                invalidAccountId.printStackTrace();
+                                return complete(StatusCodes.BAD_REQUEST);
+                            }
+                        }))));
     }
 }

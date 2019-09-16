@@ -42,15 +42,14 @@ public class TestAccount {
     @Test(expected = IllegalValueException.class)
     public void testDepositOfIllegalValue2(){
         Account ac = Account.getInstance("24234");
-        ac.depositMoney(new BigDecimal(23423432.3423423));
+        ac.depositMoney(new BigDecimal("1.3423423"));
     }
 
     @Test(expected = IllegalValueException.class)
     public void testDepositOfIllegalValue3(){
         Account ac = Account.getInstance("24234");
-        ac.depositMoney(new BigDecimal(-23423432.3423423));
+        ac.depositMoney(new BigDecimal("-1"));
     }
-
 
 
     @Test
