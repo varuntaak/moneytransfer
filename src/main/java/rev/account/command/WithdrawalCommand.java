@@ -1,6 +1,6 @@
 package rev.account.command;
 
-import rev.account.exceptions.IllegalOperationException;
+import rev.account.exceptions.CommandFailureException;
 import rev.accounts.Account;
 
 import java.math.BigDecimal;
@@ -19,13 +19,13 @@ public class WithdrawalCommand implements AccountCommand {
     }
 
     @Override
-    public void execute() throws IllegalOperationException {
+    public void execute() throws CommandFailureException {
         try {
             this.account.withdrawMoney(this.value);
             this.canRollback = true;
         } catch (Exception ex){
             ex.printStackTrace();
-            throw new IllegalOperationException(ex.getMessage());
+            throw new CommandFailureException(ex.getMessage());
         }
     }
 

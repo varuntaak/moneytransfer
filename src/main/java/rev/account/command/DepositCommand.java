@@ -1,6 +1,6 @@
 package rev.account.command;
 
-import rev.account.exceptions.IllegalOperationException;
+import rev.account.exceptions.CommandFailureException;
 import rev.accounts.Account;
 
 import java.math.BigDecimal;
@@ -12,6 +12,7 @@ public class DepositCommand implements AccountCommand {
 
     private BigDecimal value;
     private Account account;
+    private boolean canRollback = false;
 
     public DepositCommand(BigDecimal value, Account account){
         this.value = value;
@@ -19,18 +20,22 @@ public class DepositCommand implements AccountCommand {
     }
 
     @Override
-    public void execute() throws IllegalOperationException {
+    public void execute() throws CommandFailureException {
         try {
             this.account.depositMoney(value);
+            this.canRollback = true;
         } catch (Exception ex){
             ex.printStackTrace();
-            throw new IllegalOperationException(ex.getMessage());
+            throw new CommandFailureException(ex.getMessage());
         }
     }
 
     @Override
     public void rollback() {
-        this.account.withdrawMoney(value);
+        if (canRollback){
+            this.account.withdrawMoney(value);
+            this.canRollback = false;
+        }
     }
 
 }
