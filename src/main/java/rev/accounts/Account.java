@@ -54,7 +54,6 @@ public class Account {
         synchronized (this){
             this.balance = this.balance.add(value);
         }
-        logger.info("Account Update - new balance: " + this.balance);
     }
 
     /***
