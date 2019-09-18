@@ -8,7 +8,7 @@ import static org.mockito.Mockito.*;
 import rev.account.command.DepositCommand;
 import rev.account.command.WithdrawalCommand;
 import rev.account.exceptions.DuplicateAccountIdException;
-import rev.account.exceptions.IllegalOperationException;
+import rev.account.exceptions.CommandFailureException;
 import rev.account.exceptions.InvalidAccountId;
 import rev.accounts.Account;
 import rev.accounts.AccountManager;
@@ -118,19 +118,17 @@ public class TestAccountManager{
         assertTrue(AccountManager.getAccountBalance(u1.toString()).equals(new BigDecimal("990")));
     }
 
-    /** Test the transfer money when deposit to the account fails but withdrawal succeded.
-     * The withdrawal money is rolledback.
+    /** Test the transfer money when deposit to the account fails but withdrawal succeeded.
+     * The withdrawal money is rolled back.
      * @throws DuplicateAccountIdException
      * @throws InvalidAccountId
-     * @throws IllegalOperationException
+     * @throws CommandFailureException
      */
     @Test
-    public void testTransferMoneyAtomicityWhenDepositFails() throws DuplicateAccountIdException, InvalidAccountId, IllegalOperationException {
-        UUID u1 = UUID.randomUUID();
-        AccountManager.createNewAccount(u1);
+    public void testTransferMoneyAtomicityWhenDepositFails() throws DuplicateAccountIdException, InvalidAccountId, CommandFailureException {
         // deposit fails intentionally to test the rollback
         DepositCommand dc = mock(DepositCommand.class);
-        doThrow(IllegalOperationException.class).when(dc).execute();
+        doThrow(CommandFailureException.class).when(dc).execute();
 
 
         UUID u2 = UUID.randomUUID();
@@ -141,8 +139,6 @@ public class TestAccountManager{
         //function under test
         AccountManager.executeTransferMoneyCommands(wc, dc);
 
-        //check if the deposit happens
-        assertTrue(AccountManager.getAccountBalance(u1.toString()).compareTo(AccountManager.INITIAL_BALANCE) == 0);
         //check if the withdrawal rollback
         assertTrue(account.getBalance().compareTo(new BigDecimal("100")) == 0);
 
@@ -191,6 +187,41 @@ public class TestAccountManager{
         assertTrue(AccountManager.getAccountBalance(u1.toString()).compareTo(new BigDecimal("0")) == 0);
         assertTrue(AccountManager.getAccountBalance(u2.toString()).compareTo(new BigDecimal("2000")) == 0);
 
+    }
+
+    @Test
+    public void testTransferMoneyThreadSafeWithExceptionInDeposit() throws DuplicateAccountIdException, CommandFailureException, InvalidAccountId {
+        // deposit fails intentionally to test the rollback
+        DepositCommand dc = mock(DepositCommand.class);
+        doThrow(CommandFailureException.class).when(dc).execute();
+
+        UUID u2 = UUID.randomUUID();
+        Account account = Account.getInstance(u2.toString());
+        account.depositMoney(new BigDecimal(1000));
+
+        ExecutorService exec = Executors.newFixedThreadPool(1000);
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                // all threads will have their own WithdrawalCommand instance
+                WithdrawalCommand wc = new WithdrawalCommand(new BigDecimal("0.01"), account);
+                AccountManager.executeTransferMoneyCommands(wc, dc);
+            }
+        };
+        int i = 100000;
+        while(i > 0){
+            exec.execute(r);
+            i--;
+        }
+        try {
+            exec.shutdown();
+            exec.awaitTermination(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        //check if the withdrawal rollback
+        assertTrue(account.getBalance().compareTo(new BigDecimal("1000")) == 0);
     }
 
 
