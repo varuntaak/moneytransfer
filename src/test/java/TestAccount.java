@@ -1,16 +1,14 @@
-import akka.dispatch.ExecutorServiceFactory;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
 import rev.account.exceptions.IllegalValueException;
 import rev.account.exceptions.InsuffificentBalance;
 import rev.accounts.Account;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
-import java.util.DoubleSummaryStatistics;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by i316946 on 16/9/19.
@@ -50,7 +48,6 @@ public class TestAccount {
         Account ac = Account.getInstance("24234");
         ac.depositMoney(new BigDecimal("-1"));
     }
-
 
     @Test
     public void testMaxValue(){
