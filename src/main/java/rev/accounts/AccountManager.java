@@ -2,21 +2,24 @@ package rev.accounts;
 
 import rev.account.command.AccountCommand;
 import rev.account.command.DepositCommand;
+import rev.account.command.TransferMoneyCommand;
 import rev.account.command.WithdrawalCommand;
 import rev.account.exceptions.DuplicateAccountIdException;
-import rev.account.exceptions.IllegalOperationException;
+import rev.account.exceptions.CommandFailureException;
 import rev.account.exceptions.InvalidAccountId;
 
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
-
+import java.util.List;
 /**
  * Created by i316946 on 14/9/19.
  *
- * AccountManager to manage customer accounts
+ * AccountManager to manage customer accounts of same currency.
  * It creates account with an initial balance (i.e 1000) and allow money to be transfer between
  * all managed accounts.
  * Accounts are managed using the final accountMap: Map<String, @Account> to enforce the security.
@@ -56,7 +59,7 @@ public class AccountManager {
      * Function to create new account with default deposit of 0.0$, with a given uuid value.
      * @param id: UUID to create a unique account
      * @return Account
-     * @throws DuplicateAccountIdException
+     * @throws DuplicateAccountIdException throws if the account exists with the id.
      */
 //    TODO: remove account for account id.
     public static Account createNewAccount(UUID id) throws DuplicateAccountIdException {
@@ -67,30 +70,45 @@ public class AccountManager {
         return ac;
     }
 
+    /**
+     * Transfer money between same currency account.
+     * @param debitAccountId Account from which the value is debited.
+     * @param beneficiaryAccountId Account to which the value is credited.
+     * @param value The value to be debited/credited.
+     * @return boolean
+     * @throws InvalidAccountId throws if the account id is invalid.
+     */
     public static boolean transferMoney(String debitAccountId, String beneficiaryAccountId, String value) throws InvalidAccountId {
         if (debitAccountId == null || beneficiaryAccountId == null)
             throw new InvalidAccountId("Account id for debitAccount: " + debitAccountId + "or beneficiaryAccount: " + beneficiaryAccountId + " is invalid");
         if (!accountMap.keySet().contains(debitAccountId) || !accountMap.keySet().contains(beneficiaryAccountId))
             throw new InvalidAccountId("Account id for debitAccount: " + debitAccountId + "or beneficiaryAccount: " + beneficiaryAccountId + " is invalid");
-        AccountCommand wac = new WithdrawalCommand(new BigDecimal(value), accountMap.get(debitAccountId));
-        AccountCommand ac = new DepositCommand(new BigDecimal(value), accountMap.get(beneficiaryAccountId));
+        WithdrawalCommand withdrawalCommand = new WithdrawalCommand(new BigDecimal(value), accountMap.get(debitAccountId));
+        DepositCommand depositCommand = new DepositCommand(new BigDecimal(value), accountMap.get(beneficiaryAccountId));
         try{
-            executeTransferMoneyCommands(wac, ac);
+            return executeTransferMoneyCommands(withdrawalCommand, depositCommand);
         } catch (Exception ex){
             ex.printStackTrace();
-            return false;
         }
-        return true;
+        return false;
     }
 
-    public static void executeTransferMoneyCommands(AccountCommand withdrawal, AccountCommand deposit) {
+    /**
+     * Execute the command or rollabck if exception throws.
+     * @param withdrawal: AccountCommand
+     * @param deposit: AccountCommand
+     * @return boolean
+     */
+    public static boolean executeTransferMoneyCommands(WithdrawalCommand withdrawal, DepositCommand deposit) {
         try{
-            withdrawal.execute();
-            deposit.execute();
-        } catch (IllegalOperationException e){
+            List<AccountCommand> commands = new ArrayList<>();
+            commands.add(withdrawal);
+            commands.add(deposit);
+            new TransferMoneyCommand(commands).execute();
+            return true;
+        } catch (CommandFailureException e){
             e.printStackTrace();
-            withdrawal.rollback();
-            deposit.rollback();
         }
+        return false;
     }
 }
