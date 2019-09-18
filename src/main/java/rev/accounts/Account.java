@@ -81,6 +81,5 @@ public class Account {
                 throw new InsuffificentBalance("The balance is not sufficient for this withdrawal");
             this.balance = this.balance.subtract(value);
         }
-        logger.info("Account Update - account: " + this.id + ", balance: " + this.balance);
     }
 }
