@@ -53,7 +53,7 @@ public class Application extends AllDirectives {
                 path(remaining(), (String id) ->
                         get(() -> {
                             try {
-                                return complete(StatusCodes.OK, AccountManager.getAccount(id), Jackson.marshaller());
+                                return complete(StatusCodes.OK, AccountManager.getAccountBalance(id), Jackson.marshaller());
                             } catch (InvalidAccountId invalidAccountId) {
                                 invalidAccountId.printStackTrace();
                                 return complete(StatusCodes.BAD_REQUEST);
