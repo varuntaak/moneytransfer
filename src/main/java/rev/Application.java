@@ -16,14 +16,18 @@ import akka.http.javadsl.server.AllDirectives;
 import akka.http.javadsl.server.Route;
 import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import rev.account.exceptions.InvalidAccountId;
-import rev.accounts.AccountManager;
+import rev.account.AccountManager;
 
 import java.util.concurrent.CompletionStage;
 
 import static akka.http.javadsl.server.PathMatchers.remaining;
 
 public class Application extends AllDirectives {
+
+    Injector injector = Guice.createInjector(new AccountsModule());
 
     public static void main(String[] args) throws Exception {
         // boot up server using the route as defined below
@@ -48,16 +52,21 @@ public class Application extends AllDirectives {
     }
 
     private Route createRoute() {
+        AccountManager accountManager = injector.getInstance(AccountManager.class);
         return concat(
-                pathPrefix( "hello", () ->
+                pathPrefix( "balance", () ->
                 path(remaining(), (String id) ->
                         get(() -> {
                             try {
-                                return complete(StatusCodes.OK, AccountManager.getAccountBalance(id), Jackson.marshaller());
+                                return complete(StatusCodes.OK, accountManager.getAccountBalance(id), Jackson.marshaller());
                             } catch (InvalidAccountId invalidAccountId) {
                                 invalidAccountId.printStackTrace();
                                 return complete(StatusCodes.BAD_REQUEST);
                             }
-                        }))));
+                        }))),
+                path( "transfermoney", () ->
+                        post( () -> {
+                            return complete(StatusCodes.OK);
+                        })));
     }
 }

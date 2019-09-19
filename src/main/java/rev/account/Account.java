@@ -1,7 +1,9 @@
-package rev.accounts;
+package rev.account;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import rev.account.exceptions.IllegalValueException;
 import rev.account.exceptions.InsuffificentBalance;
 
@@ -18,12 +20,13 @@ public class Account {
 
     final static Logger logger = Logger.getLogger(Account.class.getName());
 
-    final String id;
+    private String id;
     private BigDecimal balance;
 
+    @Inject
     @JsonCreator
-    Account(@JsonProperty("id") String id,
-            @JsonProperty("balance") BigDecimal balance) {
+    public Account(@JsonProperty("id") String id,
+            @JsonProperty("balance") @Named("INITIAL_BALANCE") BigDecimal balance) {
         this.id = id;
         this.balance = balance;
     }
@@ -80,5 +83,9 @@ public class Account {
                 throw new InsuffificentBalance("The balance is not sufficient for this withdrawal");
             this.balance = this.balance.subtract(value);
         }
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

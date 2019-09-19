@@ -1,11 +1,14 @@
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.junit.Before;
 import org.junit.Test;
+import rev.AccountsModule;
 import rev.account.command.AccountCommand;
 import rev.account.command.DepositCommand;
 import rev.account.command.TransferMoneyCommand;
 import rev.account.command.WithdrawalCommand;
 import rev.account.exceptions.CommandFailureException;
-import rev.accounts.Account;
+import rev.account.Account;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,40 +22,46 @@ import static org.mockito.Mockito.mock;
  * Created by i316946 on 17/9/19.
  */
 public class TestAccountCommand {
+
+    Injector injector = Guice.createInjector(new AccountsModule());
     Account account1;
     Account account2;
-    AccountCommand depositCommand;
-    AccountCommand withdrawalCommand;
+    DepositCommand depositCommand;
+    WithdrawalCommand withdrawalCommand;
+
 
     @Before
     public void setup(){
         BigDecimal value = new BigDecimal("10");
-        this.account1 = Account.getInstance("23423");
+        this.account1 = injector.getInstance(Account.class);
         account1.depositMoney(value);
+        this.withdrawalCommand = injector.getInstance(WithdrawalCommand.class);
         this.withdrawalCommand = new WithdrawalCommand(value, account1);
         this.account2 = Account.getInstance("23423");
         this.depositCommand = new DepositCommand(value, account2);
+
+        withdrawalCommand = injector.getInstance(WithdrawalCommand.class);
+        depositCommand = injector.getInstance(DepositCommand.class);
+
     }
 
 
     @Test
     public void testDepositCommand() throws CommandFailureException {
         BigDecimal value = new BigDecimal("10");
-        Account account = Account.getInstance("23423");
-        AccountCommand ac = new DepositCommand(value, account);
-        ac.execute();
-        assertTrue(value.equals(account.getBalance()));
+        DepositCommand depositCommand = injector.getInstance(DepositCommand.class);
+        depositCommand.setValue(value);
+        depositCommand.execute();
+        assertTrue(depositCommand.getAccount().getBalance().compareTo(new BigDecimal("1010")) == 0);
     }
 
     @Test
     public void testWithdrawalCommand() throws CommandFailureException {
         BigDecimal value = new BigDecimal("10");
-        Account account = Account.getInstance("23423");
-        AccountCommand dac = new DepositCommand(value, account);
-        dac.execute();
-        AccountCommand wac = new WithdrawalCommand(value, account);
-        wac.execute();
-        assertTrue(new BigDecimal("0").equals(account.getBalance()));
+        WithdrawalCommand withdrawalCommand = injector.getInstance(WithdrawalCommand.class);
+        withdrawalCommand.setValue(value);
+        withdrawalCommand.execute();
+        assertTrue(new BigDecimal("990").compareTo(withdrawalCommand.getAccount().getBalance()) == 0);
     }
 
     /**
@@ -65,19 +74,18 @@ public class TestAccountCommand {
     @Test
     public void testWithdrawalCommandRollbackBeforeExecute() throws CommandFailureException {
         BigDecimal value = new BigDecimal("10");
-        Account account = Account.getInstance("23423");
-        account.depositMoney(new BigDecimal("100"));
-        AccountCommand wac = new WithdrawalCommand(value, account);
-        wac.rollback();
-        assertTrue(new BigDecimal("100").equals(account.getBalance()));
-        wac.rollback();
-        assertTrue(new BigDecimal("100").equals(account.getBalance()));
+        Account account = withdrawalCommand.getAccount();
+        withdrawalCommand.setValue(value);
+        withdrawalCommand.rollback();
+        assertTrue(new BigDecimal("1000").equals(account.getBalance()));
+        withdrawalCommand.rollback();
+        assertTrue(new BigDecimal("1000").equals(account.getBalance()));
 
-        wac.execute();
-        wac.rollback();
-        assertTrue(new BigDecimal("100").equals(account.getBalance()));
-        wac.rollback();
-        assertTrue(new BigDecimal("100").equals(account.getBalance()));
+        withdrawalCommand.execute();
+        withdrawalCommand.rollback();
+        assertTrue(new BigDecimal("1000").equals(account.getBalance()));
+        withdrawalCommand.rollback();
+        assertTrue(new BigDecimal("1000").equals(account.getBalance()));
     }
 
 
@@ -90,30 +98,31 @@ public class TestAccountCommand {
     @Test
     public void testDepositCommandRollabackBeforeCommandExecute() throws CommandFailureException {
         BigDecimal value = new BigDecimal("10");
-        Account account = Account.getInstance("23423");
-        account.depositMoney(new BigDecimal("100"));
-        AccountCommand dc = new DepositCommand(value, account);
-        dc.rollback();
-        assertTrue(new BigDecimal("100").equals(account.getBalance()));
-        dc.rollback();
-        assertTrue(new BigDecimal("100").equals(account.getBalance()));
+        depositCommand.setValue(value);
+        Account account = depositCommand.getAccount();
+        depositCommand.rollback();
+        assertTrue(new BigDecimal("1000").equals(account.getBalance()));
+        depositCommand.rollback();
+        assertTrue(new BigDecimal("1000").equals(account.getBalance()));
 
-        dc.execute();
-        dc.rollback();
-        assertTrue(new BigDecimal("100").equals(account.getBalance()));
-        dc.rollback();
-        assertTrue(new BigDecimal("100").equals(account.getBalance()));
+        depositCommand.execute();
+        depositCommand.rollback();
+        assertTrue(new BigDecimal("1000").equals(account.getBalance()));
+        depositCommand.rollback();
+        assertTrue(new BigDecimal("1000").equals(account.getBalance()));
     }
 
     @Test
     public void testTransferMoneyCommand() throws CommandFailureException {
-        List<AccountCommand> commandList = new ArrayList<>();
-        commandList.add(this.withdrawalCommand);
-        commandList.add(this.depositCommand);
-        AccountCommand transferMoneyCommand = new TransferMoneyCommand(commandList);
-        transferMoneyCommand.execute();
-        assertTrue(this.account1.getBalance().compareTo(new BigDecimal("0")) == 0);
-        assertTrue(this.account2.getBalance().compareTo(new BigDecimal("10")) == 0);
+        BigDecimal value = new BigDecimal("1000");
+        TransferMoneyCommand command = injector.getInstance(TransferMoneyCommand.class);
+        Account account1 = command.getWithdrawalCommand().getAccount();
+        Account account2 = command.getDepositCommand().getAccount();
+        command.getWithdrawalCommand().setValue(value);
+        command.getDepositCommand().setValue(value);
+        command.execute();
+        assertTrue(account1.getBalance().compareTo(new BigDecimal("0")) == 0);
+        assertTrue(account2.getBalance().compareTo(new BigDecimal("2000")) == 0);
     }
 
     @Test
@@ -122,17 +131,19 @@ public class TestAccountCommand {
         DepositCommand dc = mock(DepositCommand.class);
         doThrow(CommandFailureException.class).when(dc).execute();
 
-        List<AccountCommand> commandList = new ArrayList<>();
-        commandList.add(this.withdrawalCommand);
-        commandList.add(dc);
+        BigDecimal value = new BigDecimal("1000");
+        TransferMoneyCommand command = injector.getInstance(TransferMoneyCommand.class);
+        command.getWithdrawalCommand().setValue(value);
+        command.setDepositCommand(dc);
 
-        AccountCommand transferMoneyCommand = new TransferMoneyCommand(commandList);
+        Account account1 = command.getWithdrawalCommand().getAccount();
+
         try {
-            transferMoneyCommand.execute();
+            command.execute();
         } catch (Exception ex){}
 
         // Account1 balance is unchanged in case of partial failure.
-        assertTrue(this.account1.getBalance().compareTo(new BigDecimal("10")) == 0);
+        assertTrue(account1.getBalance().compareTo(new BigDecimal("1000")) == 0);
 
 
     }

@@ -1,17 +1,21 @@
 /**
  * Created by i316946 on 14/9/19.
  */
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.junit.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import rev.AccountsModule;
 import rev.account.command.DepositCommand;
+import rev.account.command.TransferMoneyCommand;
 import rev.account.command.WithdrawalCommand;
 import rev.account.exceptions.DuplicateAccountIdException;
 import rev.account.exceptions.CommandFailureException;
 import rev.account.exceptions.InvalidAccountId;
-import rev.accounts.Account;
-import rev.accounts.AccountManager;
+import rev.account.Account;
+import rev.account.AccountManager;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -21,6 +25,20 @@ import java.util.concurrent.TimeUnit;
 
 public class TestAccountManager{
 
+    Injector injector = Guice.createInjector(new AccountsModule());
+    AccountManager accountManager;
+    Account newAccount;
+    TransferMoneyCommand command;
+
+    @Before
+    public void setUP() {
+        accountManager = injector.getInstance(AccountManager.class);
+        newAccount = injector.getInstance(Account.class);
+        command = injector.getInstance(TransferMoneyCommand.class);
+
+    }
+
+
     /**
      * Test create new account with INITIAL_BALANCE.
      * @throws DuplicateAccountIdException
@@ -28,8 +46,9 @@ public class TestAccountManager{
     @Test
     public void testCreateAccount() throws DuplicateAccountIdException {
         // create a new account check initial balance
-        Account newAccount = AccountManager.createNewAccount();
-        assertTrue(newAccount.getBalance().equals(AccountManager.INITIAL_BALANCE));
+        accountManager.createNewAccount(newAccount);
+        System.out.println(newAccount.getBalance());
+        assertTrue(newAccount.getBalance().compareTo(new BigDecimal("1000")) == 0);
 
         // test if the account has a valid uuid
         UUID uuid = UUID.fromString(newAccount.getId());
@@ -41,66 +60,64 @@ public class TestAccountManager{
     public void testCreateAccountWithUniqueness() throws DuplicateAccountIdException {
         //set up to have an account with the id
         UUID id = UUID.randomUUID();
-        Account newAccount = AccountManager.createNewAccount(id);
+        accountManager.createNewAccount(newAccount, id);
         assertTrue(newAccount.getBalance().equals(AccountManager.INITIAL_BALANCE));
         UUID uuid = UUID.fromString(newAccount.getId());
         assertTrue(uuid.toString().equals(newAccount.getId()));
 
         //create an account with existing id throws a DuplicateAccountIdException
-        AccountManager.createNewAccount(id);
+        accountManager.createNewAccount(newAccount, id);
     }
 
     /** Test the getAccountBalance for various edge cases **/
     @Test
     public void testGetAccountBalanceWithValidId() throws DuplicateAccountIdException, InvalidAccountId {
-        // create a new account
-        Account newAccount = AccountManager.createNewAccount();
-
         // get the balance of the new account and match to INITIAL_BALANCE
-        BigDecimal balance = AccountManager.getAccountBalance(newAccount.getId());
+        accountManager.createNewAccount(this.newAccount);
+        BigDecimal balance = accountManager.getAccountBalance(this.newAccount.getId());
         assertNotNull(balance);
         assertTrue(balance.equals(AccountManager.INITIAL_BALANCE));
-        assertTrue(newAccount.getBalance().equals(AccountManager.getAccountBalance(newAccount.getId())));
+        assertTrue(this.newAccount.getBalance().equals(accountManager.getAccountBalance(this.newAccount.getId())));
     }
 
     /** test get balance with invalid account id throws exception **/
     @Test(expected = InvalidAccountId.class)
     public void testInvalidAccountIdAsNotUUID() throws InvalidAccountId {
-        AccountManager.getAccountBalance("423423iurewr");
+        accountManager.getAccountBalance("423423iurewr");
     }
 
     /** test get balance with invalid account id throws exception **/
     @Test(expected = InvalidAccountId.class)
     public void testInvalidAccountIdAsNull() throws InvalidAccountId {
-        AccountManager.getAccountBalance(null);
+        accountManager.getAccountBalance(null);
     }
 
     /** Test the money transfer for null values **/
     @Test(expected = InvalidAccountId.class)
     public void testTransferMoneyInvalidInput1() throws InvalidAccountId {
-        AccountManager.transferMoney(null, null, "12");
+        accountManager.transferMoney(null, null, "12", command);
     }
 
     /** Test the money transfer for invalid account id for debit account. **/
     @Test(expected = InvalidAccountId.class)
     public void testTransferMoneyInvalidInput2() throws InvalidAccountId, DuplicateAccountIdException {
         UUID uuid = UUID.randomUUID();
-        AccountManager.createNewAccount(uuid);
-        AccountManager.transferMoney("dfsdf", uuid.toString(), "12");
+        accountManager.createNewAccount(newAccount, uuid);
+        accountManager.transferMoney("dfsdf", uuid.toString(), "12", command);
     }
 
     /** Test the transfer money for invalid account id of the beneficiary account **/
     @Test(expected = InvalidAccountId.class)
     public void testTransferMoneyInvalidInput3() throws InvalidAccountId, DuplicateAccountIdException {
         UUID uuid = UUID.randomUUID();
-        AccountManager.createNewAccount(uuid);
-        AccountManager.transferMoney( uuid.toString(), "ewrewr", "12");
+        accountManager.createNewAccount(newAccount, uuid);
+        accountManager.transferMoney( uuid.toString(), "ewrewr", "12", command);
     }
 
     /** Test the transfer money when both accounts are have the invalid account id **/
     @Test(expected = InvalidAccountId.class)
     public void testTransferMoneyInvalidInput4() throws InvalidAccountId {
-        AccountManager.transferMoney("dfsdf", "erwer", "12");
+        accountManager.transferMoney("dfsdf", "erwer", "12", command);
     }
 
     /** Test the transfer money for a valid case **/
@@ -109,13 +126,14 @@ public class TestAccountManager{
         UUID u1 = UUID.randomUUID();
         UUID u2 = UUID.randomUUID();
 
-        AccountManager.createNewAccount(u1);
-        AccountManager.createNewAccount(u2);
+        accountManager.createNewAccount(newAccount, u1);
+        Account newAccount2 = injector.getInstance(Account.class);
+        accountManager.createNewAccount(newAccount2, u2);
 
-        boolean status = AccountManager.transferMoney(u1.toString(), u2.toString(), "10");
+        boolean status = accountManager.transferMoney(u1.toString(), u2.toString(), "10", command);
         assertTrue(status);
-        assertTrue(AccountManager.getAccountBalance(u2.toString()).equals(new BigDecimal("1010")));
-        assertTrue(AccountManager.getAccountBalance(u1.toString()).equals(new BigDecimal("990")));
+        assertTrue(accountManager.getAccountBalance(u2.toString()).equals(new BigDecimal("1010")));
+        assertTrue(accountManager.getAccountBalance(u1.toString()).equals(new BigDecimal("990")));
     }
 
     /** Test the transfer money when deposit to the account fails but withdrawal succeeded.
@@ -130,18 +148,22 @@ public class TestAccountManager{
         DepositCommand dc = mock(DepositCommand.class);
         doThrow(CommandFailureException.class).when(dc).execute();
 
+        command.setDepositCommand(dc);
 
+        UUID u1 = UUID.randomUUID();
         UUID u2 = UUID.randomUUID();
-        Account account = Account.getInstance(u2.toString());
-        account.depositMoney(new BigDecimal(100));
-        WithdrawalCommand wc = new WithdrawalCommand(new BigDecimal("23"), account);
+
+        accountManager.createNewAccount(newAccount, u1);
+        Account newAccount2 = injector.getInstance(Account.class);
+        accountManager.createNewAccount(newAccount2, u2);
 
         //function under test
-        AccountManager.executeTransferMoneyCommands(wc, dc);
+        boolean status = accountManager.transferMoney(u1.toString(), u2.toString(), "10", command);
 
         //check if the withdrawal rollback
-        assertTrue(account.getBalance().compareTo(new BigDecimal("100")) == 0);
-
+        System.out.println(newAccount.getBalance());
+        assertFalse(status);
+        assertTrue(newAccount.getBalance().compareTo(new BigDecimal("1000")) == 0);
     }
 
     /**
@@ -159,15 +181,16 @@ public class TestAccountManager{
         UUID u1 = UUID.randomUUID();
         UUID u2 = UUID.randomUUID();
 
-        AccountManager.createNewAccount(u1);
-        AccountManager.createNewAccount(u2);
+        accountManager.createNewAccount(newAccount, u1);
+        Account newAccount2 = injector.getInstance(Account.class);
+        accountManager.createNewAccount(newAccount2, u2);
 
         ExecutorService exec = Executors.newFixedThreadPool(500);
         Runnable r = new Runnable() {
             @Override
             public void run() {
                 try {
-                    AccountManager.transferMoney(u1.toString(), u2.toString(), "0.01");
+                    accountManager.transferMoney(u1.toString(), u2.toString(), "0.01", command);
                 } catch (InvalidAccountId invalidAccountId) {
                     invalidAccountId.printStackTrace();
                 }
@@ -184,8 +207,8 @@ public class TestAccountManager{
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertTrue(AccountManager.getAccountBalance(u1.toString()).compareTo(new BigDecimal("0")) == 0);
-        assertTrue(AccountManager.getAccountBalance(u2.toString()).compareTo(new BigDecimal("2000")) == 0);
+        assertTrue(accountManager.getAccountBalance(u1.toString()).compareTo(new BigDecimal("0")) == 0);
+        assertTrue(accountManager.getAccountBalance(u2.toString()).compareTo(new BigDecimal("2000")) == 0);
 
     }
 
@@ -195,17 +218,27 @@ public class TestAccountManager{
         DepositCommand dc = mock(DepositCommand.class);
         doThrow(CommandFailureException.class).when(dc).execute();
 
+        command.setDepositCommand(dc);
+
+        UUID u1 = UUID.randomUUID();
         UUID u2 = UUID.randomUUID();
-        Account account = Account.getInstance(u2.toString());
-        account.depositMoney(new BigDecimal(1000));
+
+        accountManager.createNewAccount(newAccount, u1);
+        Account newAccount2 = injector.getInstance(Account.class);
+        accountManager.createNewAccount(newAccount2, u2);
+
+        newAccount2.depositMoney(new BigDecimal(1000));
 
         ExecutorService exec = Executors.newFixedThreadPool(1000);
         Runnable r = new Runnable() {
             @Override
             public void run() {
                 // all threads will have their own WithdrawalCommand instance
-                WithdrawalCommand wc = new WithdrawalCommand(new BigDecimal("0.01"), account);
-                AccountManager.executeTransferMoneyCommands(wc, dc);
+                try {
+                    accountManager.transferMoney(u1.toString(), u2.toString(), "0.01", command);
+                } catch (InvalidAccountId invalidAccountId) {
+                    invalidAccountId.printStackTrace();
+                }
             }
         };
         int i = 100000;
@@ -221,7 +254,7 @@ public class TestAccountManager{
         }
 
         //check if the withdrawal rollback
-        assertTrue(account.getBalance().compareTo(new BigDecimal("1000")) == 0);
+        assertTrue(newAccount2.getBalance().compareTo(new BigDecimal("2000")) == 0);
     }
 
 

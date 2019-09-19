@@ -1,7 +1,8 @@
 package rev.account.command;
 
+import com.google.inject.Inject;
 import rev.account.exceptions.CommandFailureException;
-import rev.accounts.Account;
+import rev.account.Account;
 
 import java.math.BigDecimal;
 
@@ -14,6 +15,7 @@ public class DepositCommand implements AccountCommand {
     private Account account;
     private boolean canRollback = false;
 
+    @Inject
     public DepositCommand(BigDecimal value, Account account){
         this.value = value;
         this.account = account;
@@ -38,4 +40,19 @@ public class DepositCommand implements AccountCommand {
         }
     }
 
+    public BigDecimal getValue() {
+        return value;
+    }
+
+    public void setValue(BigDecimal value) {
+        this.value = value;
+    }
+
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
 }

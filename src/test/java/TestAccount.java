@@ -1,7 +1,7 @@
 import org.junit.Test;
 import rev.account.exceptions.IllegalValueException;
 import rev.account.exceptions.InsuffificentBalance;
-import rev.accounts.Account;
+import rev.account.Account;
 
 import java.math.BigDecimal;
 import java.util.concurrent.ExecutorService;
