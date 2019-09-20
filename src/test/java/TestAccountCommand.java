@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
@@ -32,17 +33,8 @@ public class TestAccountCommand {
 
     @Before
     public void setup(){
-        BigDecimal value = new BigDecimal("10");
-        this.account1 = injector.getInstance(Account.class);
-        account1.depositMoney(value);
-        this.withdrawalCommand = injector.getInstance(WithdrawalCommand.class);
-        this.withdrawalCommand = new WithdrawalCommand(value, account1);
-        this.account2 = Account.getInstance("23423");
-        this.depositCommand = new DepositCommand(value, account2);
-
         withdrawalCommand = injector.getInstance(WithdrawalCommand.class);
         depositCommand = injector.getInstance(DepositCommand.class);
-
     }
 
 
@@ -51,8 +43,25 @@ public class TestAccountCommand {
         BigDecimal value = new BigDecimal("10");
         DepositCommand depositCommand = injector.getInstance(DepositCommand.class);
         depositCommand.setValue(value);
+        //execute should deposit the money
         depositCommand.execute();
         assertTrue(depositCommand.getAccount().getBalance().compareTo(new BigDecimal("1010")) == 0);
+        //rollback should revert the value
+        depositCommand.rollback();
+        assertTrue(depositCommand.getAccount().getBalance().compareTo(new BigDecimal("1000")) == 0);
+        //subsequent rollback should not change any thing
+        depositCommand.rollback();
+        assertTrue(depositCommand.getAccount().getBalance().compareTo(new BigDecimal("1000")) == 0);
+    }
+
+    @Test(expected = CommandFailureException.class)
+    public void testDepoistCommandFailure() throws CommandFailureException {
+        Account account = mock(Account.class);
+        doThrow(Error.class).when(account).depositMoney(BigDecimal.ONE);
+        DepositCommand depositCommand = injector.getInstance(DepositCommand.class);
+        depositCommand.setAccount(account);
+        depositCommand.setValue(BigDecimal.ONE);
+        depositCommand.execute();
     }
 
     @Test
@@ -60,8 +69,26 @@ public class TestAccountCommand {
         BigDecimal value = new BigDecimal("10");
         WithdrawalCommand withdrawalCommand = injector.getInstance(WithdrawalCommand.class);
         withdrawalCommand.setValue(value);
+        //execute should withdraw the money
         withdrawalCommand.execute();
         assertTrue(new BigDecimal("990").compareTo(withdrawalCommand.getAccount().getBalance()) == 0);
+        //rollback should revert the value
+        withdrawalCommand.rollback();
+        assertTrue(new BigDecimal("1000").compareTo(withdrawalCommand.getAccount().getBalance()) == 0);
+        //subsequent rollback should not change any thing
+        withdrawalCommand.rollback();
+        assertTrue(new BigDecimal("1000").compareTo(withdrawalCommand.getAccount().getBalance()) == 0);
+
+    }
+
+    @Test(expected = CommandFailureException.class)
+    public void testWithdrawalCommandFailure() throws CommandFailureException {
+        Account account = mock(Account.class);
+        doThrow(Error.class).when(account).withdrawMoney(BigDecimal.ONE);
+        WithdrawalCommand withdrawalCommand = injector.getInstance(WithdrawalCommand.class);
+        withdrawalCommand.setAccount(account);
+        withdrawalCommand.setValue(BigDecimal.ONE);
+        withdrawalCommand.execute();
     }
 
     /**

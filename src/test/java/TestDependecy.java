@@ -7,6 +7,9 @@ import rev.account.command.DepositCommand;
 import rev.account.command.TransferMoneyCommand;
 import rev.account.command.WithdrawalCommand;
 import rev.account.exceptions.CommandFailureException;
+import rev.models.AccountModel;
+import rev.models.TransferMoney;
+
 import static org.junit.Assert.*;
 
 import java.math.BigDecimal;
@@ -17,7 +20,7 @@ import java.math.BigDecimal;
 public class TestDependecy {
 
     @Test
-    public void testInstantiation() throws CommandFailureException {
+    public void testInjections() throws CommandFailureException {
         Injector injector = Guice.createInjector(new AccountsModule());
         Account ac = injector.getInstance(Account.class);
         ac.depositMoney(new BigDecimal("10"));
@@ -29,5 +32,13 @@ public class TestDependecy {
         assertNotNull(depositCommand);
         TransferMoneyCommand c = injector.getInstance(TransferMoneyCommand.class);
         c.execute();
+        AccountModel am = injector.getInstance(AccountModel.class);
+        assertNotNull(am);
+        assertTrue(am.getName().equals(""));
+        TransferMoney tm = injector.getInstance(TransferMoney.class);
+        assertNotNull(tm);
+        assertTrue(tm.getFrom().equals(""));
+        assertTrue(tm.getTo().equals(""));
+        assertTrue(tm.getValue().equals(""));
     }
 }

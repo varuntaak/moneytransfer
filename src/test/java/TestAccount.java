@@ -1,4 +1,8 @@
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import org.junit.Before;
 import org.junit.Test;
+import rev.AccountsModule;
 import rev.account.exceptions.IllegalValueException;
 import rev.account.exceptions.InsuffificentBalance;
 import rev.account.Account;
@@ -14,56 +18,52 @@ import static org.junit.Assert.assertTrue;
  * Created by i316946 on 16/9/19.
  */
 public class TestAccount {
+    Injector injector = Guice.createInjector(new AccountsModule());
+    Account account;
 
+    @Before
+    public void setup(){
+        account = injector.getInstance(Account.class);
+    }
 
     @Test
     public void testDepoistMoney(){
-        Account ac = Account.getInstance("23werwer");
         BigDecimal zero = new BigDecimal(0.00);
-        assertTrue(ac.getBalance().compareTo(zero) == 0);
+        account.depositMoney(zero);
+        assertTrue(account.getBalance().compareTo(new BigDecimal(AccountsModule.INITIAL_BALANCE)) == 0);
         BigDecimal v = new BigDecimal(10.0);
-        ac.depositMoney(v);
-        assertTrue(ac.getBalance().compareTo(v) == 0);
+        account.depositMoney(v);
+        assertTrue(account.getBalance().compareTo(new BigDecimal("1010")) == 0);
 
         //check deposit of extra large value
-        ac.depositMoney(new BigDecimal("10000000000000000000000000000000000000000"));
-        assertTrue(ac.getBalance().equals(new BigDecimal("10000000000000000000000000000000000000010")));
+        account.depositMoney(new BigDecimal("10000000000000000000000000000000000000000"));
+        assertTrue(account.getBalance().equals(new BigDecimal("10000000000000000000000000000000000001010")));
 
     }
 
     @Test(expected = IllegalValueException.class)
     public void testDepositOfIllegalValue(){
-        Account ac = Account.getInstance("24234");
-        ac.depositMoney(null);
+        account.depositMoney(null);
     }
 
     @Test(expected = IllegalValueException.class)
     public void testDepositOfIllegalValue2(){
-        Account ac = Account.getInstance("24234");
-        ac.depositMoney(new BigDecimal("1.3423423"));
+        account.depositMoney(new BigDecimal("1.3423423"));
     }
 
     @Test(expected = IllegalValueException.class)
     public void testDepositOfIllegalValue3(){
-        Account ac = Account.getInstance("24234");
-        ac.depositMoney(new BigDecimal("-1"));
-    }
-
-    @Test
-    public void testMaxValue(){
-        BigDecimal c = new BigDecimal("2323123.43");
-        System.out.println(c.scale());
-        System.out.println(c);
+        account.depositMoney(new BigDecimal("-1"));
     }
 
     @Test
     public void testIfDepositThreadSafe(){
-        Account ac = Account.getInstance("23werwer");
+        account.withdrawMoney(new BigDecimal(AccountsModule.INITIAL_BALANCE));
         ExecutorService exec = Executors.newFixedThreadPool(1000);
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                ac.depositMoney(BigDecimal.ONE);
+                account.depositMoney(BigDecimal.ONE);
             }
         };
         int i = 100000;
@@ -77,63 +77,60 @@ public class TestAccount {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertTrue(ac.getBalance().compareTo(new BigDecimal(100000)) == 0);
+        assertTrue(account.getBalance().compareTo(new BigDecimal(100000)) == 0);
     }
 
     @Test(expected = IllegalValueException.class)
     public void testWithdrawalOfIllegalValue(){
-        Account ac = Account.getInstance("24234");
-        ac.withdrawMoney(null);
+        account.withdrawMoney(null);
     }
 
     @Test(expected = IllegalValueException.class)
     public void testWithdrawalOfIllegalValue2(){
-        Account ac = Account.getInstance("24234");
-        ac.withdrawMoney(new BigDecimal(23423432.3423423));
+        account.withdrawMoney(new BigDecimal(23423432.3423423));
     }
 
     @Test(expected = IllegalValueException.class)
     public void testWithdrawalOfIllegalValue3(){
-        Account ac = Account.getInstance("24234");
-        ac.withdrawMoney(new BigDecimal(-23423432.3423423));
+        account.withdrawMoney(new BigDecimal(-23423432.3423423));
     }
 
     @Test(expected = InsuffificentBalance.class)
     public void testWithdrawMoneyInsufficientBalance(){
-        Account ac = Account.getInstance("34234");
-        ac.withdrawMoney(BigDecimal.ONE);
+        account.withdrawMoney(new BigDecimal("1000"));
+        account.withdrawMoney(BigDecimal.ONE);
     }
 
     @Test
     public void testWithdrawMoney(){
-        Account ac = Account.getInstance("234234");
-        ac.depositMoney(BigDecimal.ONE);
-        ac.withdrawMoney(BigDecimal.ONE);
-        assertTrue(ac.getBalance().compareTo(new BigDecimal(0)) == 0);
+        account.depositMoney(BigDecimal.ONE);
+        account.withdrawMoney(BigDecimal.ONE);
+        assertTrue(account.getBalance().compareTo(new BigDecimal(AccountsModule.INITIAL_BALANCE)) == 0);
 
         //check for decimal value with scale at 2
-        ac.depositMoney(new BigDecimal("10.23"));
-        ac.withdrawMoney(new BigDecimal("9.21"));
-        assertTrue(ac.getBalance().equals(new BigDecimal("1.02")));
+        account = injector.getInstance(Account.class);
+        account.depositMoney(new BigDecimal("10.23"));
+        account.withdrawMoney(new BigDecimal("9.21"));
+        assertTrue(account.getBalance().equals(new BigDecimal("1001.02")));
 
         //test withdrawal of extra large vlaue
-        ac = Account.getInstance("40968450");
-        ac.depositMoney(new BigDecimal("10000000000000000000000000000000000000010.10"));
-        ac.withdrawMoney(new BigDecimal("10000000000000000000000000000000000000000.09"));
-        assertTrue(ac.getBalance().equals(new BigDecimal("10.01")));
+        account = injector.getInstance(Account.class);
+        account.depositMoney(new BigDecimal("10000000000000000000000000000000000000010.10"));
+        account.withdrawMoney(new BigDecimal("10000000000000000000000000000000000000000.09"));
+        assertTrue(account.getBalance().equals(new BigDecimal("1010.01")));
     }
 
     @Test
     public void testIfWithdrawalThreadSafe(){
-        Account ac = Account.getInstance("23werwer");
         BigDecimal v = new BigDecimal("100000");
         System.out.println(v.scale());
-        ac.depositMoney(v);
+        account.withdrawMoney(new BigDecimal("1000"));
+        account.depositMoney(v);
         ExecutorService exec = Executors.newFixedThreadPool(1000);
         Runnable r = new Runnable() {
             @Override
             public void run() {
-                ac.withdrawMoney(BigDecimal.ONE);
+                account.withdrawMoney(BigDecimal.ONE);
             }
         };
         int i = 100000;
@@ -147,6 +144,6 @@ public class TestAccount {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertTrue(ac.getBalance().compareTo(new BigDecimal("0")) == 0);
+        assertTrue(account.getBalance().compareTo(new BigDecimal("0")) == 0);
     }
 }
