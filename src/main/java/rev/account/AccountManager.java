@@ -73,9 +73,8 @@ public class AccountManager {
             command.execute();
             return true;
         } catch (Exception ex){
-            ex.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     public void setIdGenerator(IdGenerator idGenerator) {
