@@ -5,6 +5,7 @@ import rev.account.exceptions.CommandFailureException;
 
 /**
  * Created by i316946 on 18/9/19.
+ * TransferMoneyCommand is to prepare a transaction in command form
  */
 public class TransferMoneyCommand implements AccountCommand {
     private WithdrawalCommand withdrawalCommand;
@@ -27,7 +28,7 @@ public class TransferMoneyCommand implements AccountCommand {
         }
     }
 
-//    TODO: to throw unrecoverable exception
+    //TODO: to catch exception and log inconsistency.
     @Override
     public void rollback() {
         withdrawalCommand.rollback();
@@ -36,10 +37,6 @@ public class TransferMoneyCommand implements AccountCommand {
 
     public WithdrawalCommand getWithdrawalCommand() {
         return withdrawalCommand;
-    }
-
-    public void setWithdrawalCommand(WithdrawalCommand withdrawalCommand) {
-        this.withdrawalCommand = withdrawalCommand;
     }
 
     public DepositCommand getDepositCommand() {

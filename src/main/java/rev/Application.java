@@ -20,13 +20,16 @@ import akka.stream.javadsl.Flow;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import rev.account.Account;
+import rev.account.command.DepositCommand;
 import rev.account.command.TransferMoneyCommand;
 import rev.account.exceptions.DuplicateAccountIdException;
 import rev.account.exceptions.InvalidAccountId;
 import rev.account.AccountManager;
 import rev.models.AccountModel;
+import rev.models.DepositModel;
 import rev.models.TransferMoney;
 
+import java.math.BigDecimal;
 import java.util.concurrent.CompletionStage;
 
 import static akka.http.javadsl.server.PathMatchers.remaining;
@@ -96,6 +99,19 @@ public class Application extends AllDirectives {
                                         e.printStackTrace();
                                         return complete(StatusCodes.BAD_REQUEST, e.getMessage());
                                     }
-                                }))));
+                                }))),
+                post(() ->
+                    path( "depositmoney", () ->
+                        entity(Jackson.unmarshaller(DepositModel.class), depositModel -> {
+                            DepositCommand depositCommand = injector.getInstance(DepositCommand.class);
+                            depositCommand.getAccount().setId(depositModel.getAccount_id());
+                            depositCommand.setValue(new BigDecimal(depositModel.getAmount()));
+                            try {
+                                if (accountManager.depositMoney(depositCommand))
+                                    return complete(StatusCodes.OK, ""+true);
+                            } catch (InvalidAccountId invalidAccountId) {
+                                return complete(StatusCodes.BAD_REQUEST, invalidAccountId.getMessage());                            }
+                            return complete(StatusCodes.OK, ""+false);
+                        }))));
     }
 }

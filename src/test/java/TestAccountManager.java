@@ -1,20 +1,20 @@
 /**
  * Created by i316946 on 14/9/19.
  */
+
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import org.junit.*;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
+import org.junit.Before;
+import org.junit.Test;
 import rev.AccountsModule;
-import rev.account.command.DepositCommand;
-import rev.account.command.TransferMoneyCommand;
-import rev.account.exceptions.DuplicateAccountIdException;
-import rev.account.exceptions.CommandFailureException;
-import rev.account.exceptions.InvalidAccountId;
 import rev.account.Account;
 import rev.account.AccountManager;
+import rev.account.command.DepositCommand;
+import rev.account.command.TransferMoneyCommand;
+import rev.account.command.WithdrawalCommand;
+import rev.account.exceptions.CommandFailureException;
+import rev.account.exceptions.DuplicateAccountIdException;
+import rev.account.exceptions.InvalidAccountId;
 import rev.account.generators.IdGenerator;
 import rev.models.TransferMoney;
 
@@ -23,6 +23,9 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
 
 public class TestAccountManager{
 
@@ -100,6 +103,19 @@ public class TestAccountManager{
         accountManager.transferMoney(transferModel, command);
     }
 
+    /** Test the money transfer for null checks **/
+    @Test(expected = IllegalArgumentException.class)
+    public void testTransferMoneyNullCheckModel() throws InvalidAccountId {
+        accountManager.transferMoney(null, command);
+    }
+
+    /** Test the money transfer for null checks **/
+    @Test(expected = IllegalArgumentException.class)
+    public void testTransferMoneyNullCheckCommand() throws InvalidAccountId {
+        accountManager.transferMoney(transferModel, null);
+    }
+
+
     /** Test the money transfer for invalid account id for debit account. **/
     @Test(expected = InvalidAccountId.class)
     public void testTransferMoneyInvalidInput2() throws InvalidAccountId, DuplicateAccountIdException {
@@ -122,7 +138,7 @@ public class TestAccountManager{
 
     /** Test the transfer money for a valid case **/
     @Test
-    public void testTransferMoney() throws DuplicateAccountIdException, InvalidAccountId {
+    public void testTransferMoney() throws DuplicateAccountIdException, InvalidAccountId, CommandFailureException {
         accountManager.createNewAccount(this.newAccount);
         Account newAccount2 = injector.getInstance(Account.class);
         accountManager.createNewAccount(newAccount2);
@@ -134,6 +150,9 @@ public class TestAccountManager{
         assertTrue(status);
         assertTrue(accountManager.getAccountBalance(newAccount2.getId()).equals(new BigDecimal("1010")));
         assertTrue(accountManager.getAccountBalance(this.newAccount.getId()).equals(new BigDecimal("990")));
+        TransferMoneyCommand transferMoneyCommand = mock(TransferMoneyCommand.class);
+        doThrow(CommandFailureException.class).when(transferMoneyCommand).execute();
+        assertFalse(accountManager.transferMoney(transferMoneyModel, transferMoneyCommand));
     }
 
     /** Test the transfer money when deposit to the account fails but withdrawal succeeded.
@@ -258,5 +277,18 @@ public class TestAccountManager{
         assertTrue(newAccount2.getBalance().compareTo(new BigDecimal("2000")) == 0);
     }
 
+    @Test
+    public void testDepositMoney() throws DuplicateAccountIdException, InvalidAccountId {
+        accountManager.createNewAccount(newAccount);
+        DepositCommand depositCommand = injector.getInstance(DepositCommand.class);
+        depositCommand.setAccount(newAccount);
+        depositCommand.setValue(new BigDecimal("1000"));
+        accountManager.depositMoney(depositCommand);
+        assertTrue(newAccount.getBalance().compareTo(new BigDecimal("2000")) == 0);
+    }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testDepositMoneyInvalidInput() throws InvalidAccountId {
+        accountManager.depositMoney(null);
+    }
 }
