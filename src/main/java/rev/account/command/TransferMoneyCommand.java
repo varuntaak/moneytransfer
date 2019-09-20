@@ -22,7 +22,6 @@ public class TransferMoneyCommand implements AccountCommand {
             withdrawalCommand.execute();
             depositCommand.execute();
         } catch (Exception ex){
-            ex.printStackTrace();
             this.rollback();
             throw new CommandFailureException(ex.getMessage());
         }

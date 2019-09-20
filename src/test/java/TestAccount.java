@@ -123,7 +123,6 @@ public class TestAccount {
     @Test
     public void testIfWithdrawalThreadSafe(){
         BigDecimal v = new BigDecimal("100000");
-        System.out.println(v.scale());
         account.withdrawMoney(new BigDecimal("1000"));
         account.depositMoney(v);
         ExecutorService exec = Executors.newFixedThreadPool(1000);

@@ -49,7 +49,6 @@ public class TestAccountManager{
     public void testCreateAccount() throws DuplicateAccountIdException {
         // create a new account check initial balance
         accountManager.createNewAccount(newAccount);
-        System.out.println(newAccount.getBalance());
         assertTrue(newAccount.getBalance().compareTo(new BigDecimal("1000")) == 0);
 
         // test if the account has a valid uuid
@@ -161,7 +160,6 @@ public class TestAccountManager{
         boolean status = accountManager.transferMoney(transferModel, command);
 
         //check if the withdrawal rollback
-        System.out.println(newAccount.getBalance());
         assertFalse(status);
         assertTrue(newAccount.getBalance().compareTo(new BigDecimal("1000")) == 0);
     }
