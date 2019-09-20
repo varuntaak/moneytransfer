@@ -25,9 +25,9 @@ public class WithdrawalCommand implements AccountCommand {
         try {
             this.account.withdrawMoney(this.value);
             this.canRollback = true;
-        } catch (Exception ex){
-            ex.printStackTrace();
-            throw new CommandFailureException(ex.getMessage());
+        } catch (Error error){
+            error.printStackTrace();
+            throw new CommandFailureException(error.getMessage());
         }
     }
 
