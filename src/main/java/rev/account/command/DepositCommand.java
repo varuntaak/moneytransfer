@@ -40,10 +40,6 @@ public class DepositCommand implements AccountCommand {
         }
     }
 
-    public BigDecimal getValue() {
-        return value;
-    }
-
     public void setValue(BigDecimal value) {
         this.value = value;
     }
