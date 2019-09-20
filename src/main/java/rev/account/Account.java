@@ -34,15 +34,6 @@ public class Account {
         this.name = name;
     }
 
-//    /***
-//     * Factory method to get an account with default value as zero.
-//     * @param id: String unique id for the account
-//     * @return Account instance
-//     */
-////    public static Account getInstance(String id){
-////        return new Account(id, new BigDecimal("0"));
-////    }
-
     public String getId() {
         return id;
     }
