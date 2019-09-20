@@ -1,7 +1,6 @@
 package rev.account.command;
 
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import rev.account.exceptions.CommandFailureException;
 import rev.account.Account;
 
@@ -16,7 +15,7 @@ public class WithdrawalCommand implements AccountCommand {
     private boolean canRollback = false;
 
     @Inject
-    public WithdrawalCommand(@Named("DEFAULT_VALUE") BigDecimal value, Account account) {
+    public WithdrawalCommand(BigDecimal value, Account account) {
         this.value = value;
         this.account = account;
     }
@@ -38,10 +37,6 @@ public class WithdrawalCommand implements AccountCommand {
             this.account.depositMoney(this.value);
             canRollback = false;
         }
-    }
-
-    public BigDecimal getValue() {
-        return value;
     }
 
     public void setValue(BigDecimal value) {
