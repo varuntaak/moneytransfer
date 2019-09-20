@@ -9,17 +9,21 @@ import rev.account.command.AccountCommand;
 import rev.account.command.DepositCommand;
 import rev.account.command.TransferMoneyCommand;
 import rev.account.command.WithdrawalCommand;
+import rev.account.generators.IdGenerator;
 import rev.account.storage.AccountStorage;
 import rev.account.storage.InMemoryAccountStorage;
+import rev.models.TransferMoney;
 
 import javax.lang.model.element.Name;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 /**
  * Created by i316946 on 18/9/19.
  */
 public class AccountsModule extends AbstractModule {
 
+    public static final int PORT = 8081;
     public static final String INITIAL_BALANCE = "1000";
 
     @Override
@@ -40,6 +44,8 @@ public class AccountsModule extends AbstractModule {
         bind(BigDecimal.class)
                 .annotatedWith(Names.named("INITIAL_BALANCE"))
                 .toInstance(new BigDecimal(INITIAL_BALANCE));
+        bind(TransferMoney.class);
+        bind(IdGenerator.class).toInstance(() -> UUID.randomUUID().toString());
 
     }
 
