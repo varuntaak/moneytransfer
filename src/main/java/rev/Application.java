@@ -57,7 +57,7 @@ public class Application extends AllDirectives {
                 .thenAccept(unbound -> system.terminate()); // and shutdown when done
     }
 
-    private Route createRoute() {
+    public Route createRoute() {
         AccountManager accountManager = injector.getInstance(AccountManager.class);
         return concat(
                 pathPrefix( "balance", () ->
