@@ -22,23 +22,26 @@ public class Account {
 
     private String id;
     private BigDecimal balance;
+    private String name;
 
     @Inject
     @JsonCreator
     public Account(@JsonProperty("id") String id,
-            @JsonProperty("balance") @Named("INITIAL_BALANCE") BigDecimal balance) {
+            @JsonProperty("balance") @Named("INITIAL_BALANCE") BigDecimal balance,
+                   @JsonProperty("name") String name) {
         this.id = id;
         this.balance = balance;
+        this.name = name;
     }
 
-    /***
-     * Factory method to get an account with default value as zero.
-     * @param id: String unique id for the account
-     * @return Account instance
-     */
-    public static Account getInstance(String id){
-        return new Account(id, new BigDecimal("0"));
-    }
+//    /***
+//     * Factory method to get an account with default value as zero.
+//     * @param id: String unique id for the account
+//     * @return Account instance
+//     */
+////    public static Account getInstance(String id){
+////        return new Account(id, new BigDecimal("0"));
+////    }
 
     public String getId() {
         return id;
@@ -87,5 +90,9 @@ public class Account {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }
