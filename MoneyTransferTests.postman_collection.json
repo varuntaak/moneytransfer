@@ -1,0 +1,329 @@
+{
+	"variables": [],
+	"info": {
+		"name": "MoneyTransferTests",
+		"_postman_id": "634d7f43-ffcc-03d3-bd44-e2d9ba3b9d95",
+		"description": "Functional tests for money transfer application",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "create account for User1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"",
+							"tests[\"Successful POST request\"] = responseCode.code === 201 || responseCode.code === 202 || responseCode.code === 200;",
+							"",
+							"postman.setGlobalVariable(\"user1_id\", responseBody);"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/createaccount",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\" : \"User1\"\n}"
+				},
+				"description": "To create a new account"
+			},
+			"response": []
+		},
+		{
+			"name": "check balance User1, the balance should be 1000",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"tests[\"Body is correct\"] = responseBody === \"1000\";"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/balance/{{user1_id}}",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "To get the latest balance of the account"
+			},
+			"response": []
+		},
+		{
+			"name": "create account for User2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"",
+							"tests[\"Response time is less than 200ms\"] = responseTime < 200;",
+							"",
+							"",
+							"postman.setGlobalVariable(\"user2_id\", responseBody);",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/createaccount",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\" : \"User2\"\n}"
+				},
+				"description": "This is to create another user"
+			},
+			"response": []
+		},
+		{
+			"name": "check balance for User2, the balance should be 1000",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"tests[\"Body is correct\"] = responseBody === \"1000\";"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/balance/{{user2_id}}",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "This to check balance for User2"
+			},
+			"response": []
+		},
+		{
+			"name": "transfer money from User1 to User2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"tests[\"Body is correct\"] = responseBody === \"true\";",
+							"",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/trasfermoney",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"from\" : \"{{user1_id}}\",\n\t\"to\" : \"{{user2_id}}\",\n\t\"value\" : \"10\"\n}"
+				},
+				"description": "To transfer money from user1 to user2"
+			},
+			"response": []
+		},
+		{
+			"name": "check balance User1, the balance should be 990",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"tests[\"Body is correct\"] = responseBody === \"990\";"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/balance/{{user1_id}}",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "To get the latest balance of the account"
+			},
+			"response": []
+		},
+		{
+			"name": "check balance User2, the balance should be 1010",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"tests[\"Body is correct\"] = responseBody === \"1010\";"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/balance/{{user2_id}}",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "To get the latest balance of the account"
+			},
+			"response": []
+		},
+		{
+			"name": "Fail check balance unknown user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Bad request\"] = responseCode.code === 400;",
+							"",
+							"tests[\"Body is correct\"] = responseBody === \"Account with id :unknown_user_id does not exist.\";"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/balance/unknown_user_id",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "To get the latest balance of the account"
+			},
+			"response": []
+		},
+		{
+			"name": "Fail create account for User1 for invalid input",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"",
+							"tests[\"Bad request\"] = responseCode.code === 400;",
+							"",
+							"tests[\"Body matches string\"] = responseBody.has(\"Cannot unmarshal JSON as AccountModel\");"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/createaccount",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name12\" : \"User1\"\n}"
+				},
+				"description": "To create a new account"
+			},
+			"response": []
+		},
+		{
+			"name": "deposit  large sum to user_1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"tests[\"Body is correct\"] = responseBody === \"true\";"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/depositmoney",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"account_id\" : \"{{user1_id}}\",\n\t\"amount\" : \"10000000000\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "check new balance User1 should be 10000000990",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"tests[\"Status code is 200\"] = responseCode.code === 200;",
+							"",
+							"tests[\"Body is correct\"] = responseBody === \"10000000990\";"
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "http://localhost:8081/balance/{{user1_id}}",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "To get the latest balance of the account"
+			},
+			"response": []
+		}
+	]
+}
