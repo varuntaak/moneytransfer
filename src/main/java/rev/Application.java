@@ -3,6 +3,7 @@ package rev;
 /**
  * Created by i316946 on 15/9/19.
  */
+import akka.Done;
 import akka.NotUsed;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.ConnectHttp;
@@ -18,8 +19,13 @@ import akka.stream.ActorMaterializer;
 import akka.stream.javadsl.Flow;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import rev.account.Account;
+import rev.account.command.TransferMoneyCommand;
+import rev.account.exceptions.DuplicateAccountIdException;
 import rev.account.exceptions.InvalidAccountId;
 import rev.account.AccountManager;
+import rev.models.AccountModel;
+import rev.models.TransferMoney;
 
 import java.util.concurrent.CompletionStage;
 
@@ -41,9 +47,9 @@ public class Application extends AllDirectives {
 
         final Flow<HttpRequest, HttpResponse, NotUsed> routeFlow = app.createRoute().flow(system, materializer);
         final CompletionStage<ServerBinding> binding = http.bindAndHandle(routeFlow,
-                ConnectHttp.toHost("localhost", 8081), materializer);
+                ConnectHttp.toHost("localhost", AccountsModule.PORT), materializer);
 
-        System.out.println("Server online at http://localhost:8080/\nPress RETURN to stop...");
+        System.out.println("Server online at http://localhost:8081/\nPress RETURN to stop...");
         System.in.read(); // let it run until user presses return
 
         binding
@@ -61,12 +67,35 @@ public class Application extends AllDirectives {
                                 return complete(StatusCodes.OK, accountManager.getAccountBalance(id), Jackson.marshaller());
                             } catch (InvalidAccountId invalidAccountId) {
                                 invalidAccountId.printStackTrace();
-                                return complete(StatusCodes.BAD_REQUEST);
+                                return complete(StatusCodes.BAD_REQUEST, invalidAccountId.getMessage());
                             }
                         }))),
-                path( "transfermoney", () ->
-                        post( () -> {
-                            return complete(StatusCodes.OK);
-                        })));
+                path("", () -> get( () -> complete(StatusCodes.OK, "Server is up and running!"))),
+                post( () ->
+                    path("trasfermoney", () ->
+                        entity(Jackson.unmarshaller(TransferMoney.class),  transferMoneyModel -> {
+                            TransferMoneyCommand command = injector.getInstance(TransferMoneyCommand.class);
+                            boolean status = false;
+                            try {
+                                status = accountManager.transferMoney(transferMoneyModel, command);
+                                return complete(StatusCodes.OK, "" +status);
+                            } catch (InvalidAccountId invalidAccountId) {
+                                invalidAccountId.printStackTrace();
+                                return complete(StatusCodes.BAD_REQUEST, invalidAccountId.getMessage());
+                            }
+                        }))),
+                post( () ->
+                        path("createaccount", () ->
+                                entity(Jackson.unmarshaller(AccountModel.class), accountModel -> {
+                                    try {
+                                        Account account = injector.getInstance(Account.class);
+                                        account.setName(accountModel.getName());
+                                        Account newAccount = accountManager.createNewAccount(account);
+                                        return complete(StatusCodes.OK, newAccount.getId());
+                                    } catch (Throwable e) {
+                                        e.printStackTrace();
+                                        return complete(StatusCodes.BAD_REQUEST, e.getMessage());
+                                    }
+                                }))));
     }
 }
