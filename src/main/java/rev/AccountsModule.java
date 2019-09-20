@@ -12,6 +12,7 @@ import rev.account.command.WithdrawalCommand;
 import rev.account.generators.IdGenerator;
 import rev.account.storage.AccountStorage;
 import rev.account.storage.InMemoryAccountStorage;
+import rev.models.DepositModel;
 import rev.models.TransferMoney;
 
 import javax.lang.model.element.Name;
@@ -45,6 +46,7 @@ public class AccountsModule extends AbstractModule {
                 .annotatedWith(Names.named("INITIAL_BALANCE"))
                 .toInstance(new BigDecimal(INITIAL_BALANCE));
         bind(TransferMoney.class);
+        bind(DepositModel.class);
         bind(IdGenerator.class).toInstance(() -> UUID.randomUUID().toString());
 
     }
