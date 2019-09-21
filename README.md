@@ -30,6 +30,33 @@ Use the postman collection to test the APIs.
     {
 	"name" : "User1"
     }
+### To transfer money from one account to another
+    POST: http://localhost:8081/trasfermoney
+    Example Payload:
+    {
+	"from" : "<ACCOUNT_ID>",
+	"to" : "<ACCOUNT_ID>",
+	"value" : "10"
+    }
+### To deposit money to an account
+    POST: http://localhost:8081/depositmoney
+    Example Payload:
+    {
+	"account_id" : "<ACCOUNT_ID>",
+	"amount" : "10000000000"
+    }
+
+## Technology stack
+
+This application is developed primarily in Java, but uses some components of scala.
+
+Technologies:
+- akka-http - Http Server for restful apis
+- Google Guice - Dependecy injection
+- Junit - Unit and integration testing
+- Mockito - For mocking
+- Postman - Functional tests
+
 
 ## Assumptions
 
