@@ -19,6 +19,18 @@ Use the postman collection to test the APIs.
 
     <ROOT_DIR>/MoneyTransferTests.postman_collection.json
 
+## APIs
+
+### To get to know the balance of an account
+    GET: http://localhost:8081/balance/<ACCOUNT_ID>
+
+### To create a new account
+    POST: http://localhost:8081/createaccount
+    Paylolad:
+    {
+	"name" : "User1"
+    }
+
 ## Assumptions
 
 ### Currencies
