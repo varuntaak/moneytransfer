@@ -75,7 +75,7 @@ public class Application extends AllDirectives {
                         }))),
                 path("", () -> get( () -> complete(StatusCodes.OK, "Server is up and running!"))),
                 post( () ->
-                    path("trasfermoney", () ->
+                    path("transfermoney", () ->
                         entity(Jackson.unmarshaller(TransferMoney.class),  transferMoneyModel -> {
                             TransferMoneyCommand command = injector.getInstance(TransferMoneyCommand.class);
                             boolean status = false;

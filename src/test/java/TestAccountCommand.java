@@ -3,19 +3,15 @@ import com.google.inject.Injector;
 import org.junit.Before;
 import org.junit.Test;
 import rev.AccountsModule;
-import rev.account.command.AccountCommand;
+import rev.account.Account;
 import rev.account.command.DepositCommand;
 import rev.account.command.TransferMoneyCommand;
 import rev.account.command.WithdrawalCommand;
 import rev.account.exceptions.CommandFailureException;
-import rev.account.Account;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.ArrayList;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.doReturn;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 

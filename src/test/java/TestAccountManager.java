@@ -11,7 +11,6 @@ import rev.account.Account;
 import rev.account.AccountManager;
 import rev.account.command.DepositCommand;
 import rev.account.command.TransferMoneyCommand;
-import rev.account.command.WithdrawalCommand;
 import rev.account.exceptions.CommandFailureException;
 import rev.account.exceptions.DuplicateAccountIdException;
 import rev.account.exceptions.InvalidAccountId;
