@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.equalTo;
  * Created by i316946 on 27/9/19.
  * Transfer balance step for JBehave to test success transfer money API
  */
-public class TransferBalanceStep {
+public class TransferMoneyStep {
 
     private String accountA_id;
     private String accountB_id;

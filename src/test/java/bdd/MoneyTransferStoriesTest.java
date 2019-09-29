@@ -33,7 +33,7 @@ public class MoneyTransferStoriesTest extends JUnitStories {
     public InjectableStepsFactory stepsFactory() {
         return new InstanceStepsFactory(configuration(), new CheckServerStatusSteps(),
                 new CreateAccountStep(),
-                new TransferBalanceStep());
+                new TransferMoneyStep());
     }
 
     @Override
