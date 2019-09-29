@@ -3,7 +3,7 @@ package rev;
 /**
  * Created by i316946 on 15/9/19.
  */
-import akka.Done;
+
 import akka.NotUsed;
 import akka.actor.ActorSystem;
 import akka.http.javadsl.ConnectHttp;
@@ -20,11 +20,11 @@ import akka.stream.javadsl.Flow;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import rev.account.Account;
+import rev.account.AccountManager;
 import rev.account.command.DepositCommand;
 import rev.account.command.TransferMoneyCommand;
-import rev.account.exceptions.DuplicateAccountIdException;
 import rev.account.exceptions.InvalidAccountId;
-import rev.account.AccountManager;
+import rev.account.exceptions.InvalidValueTypeException;
 import rev.models.AccountModel;
 import rev.models.DepositModel;
 import rev.models.TransferMoney;
@@ -80,11 +80,11 @@ public class Application extends AllDirectives {
                             TransferMoneyCommand command = injector.getInstance(TransferMoneyCommand.class);
                             boolean status = false;
                             try {
-                                status = accountManager.transferMoney(transferMoneyModel, command);
-                                return complete(StatusCodes.OK, "" +status);
-                            } catch (InvalidAccountId invalidAccountId) {
-                                invalidAccountId.printStackTrace();
-                                return complete(StatusCodes.BAD_REQUEST, invalidAccountId.getMessage());
+                                accountManager.transferMoney(transferMoneyModel, command);
+                                return complete(StatusCodes.OK, "Success");
+                            } catch (InvalidAccountId | InvalidValueTypeException | Exception e) {
+                                e.printStackTrace();
+                                return complete(StatusCodes.BAD_REQUEST, "Error: " + e.getMessage());
                             }
                         }))),
                 post( () ->

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.inject.Inject;
 
+import java.math.BigDecimal;
+
 /**
  * Created by i316946 on 19/9/19.
  */
@@ -20,7 +22,6 @@ public class TransferMoney {
         this.from = from;
         this.to = to;
         this.value = value;
-
     }
 
     public String getFrom() {

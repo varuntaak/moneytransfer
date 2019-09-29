@@ -65,9 +65,9 @@ public class Account {
         if (value == null)
             throw new IllegalValueException("The value can not be null");
         if (value.scale() > 2)
-            throw new IllegalValueException("The value scale can not be more than 2. Some legal values are: 2.22, 3.45.");
+            throw new IllegalValueException("The value must be of decimal scale of 2");
         if (value.compareTo(new BigDecimal(0)) == -1)
-            throw new IllegalValueException("The value must be a positive value");
+            throw new IllegalValueException("The value must be a positive number");
     }
 
     /***
@@ -78,7 +78,7 @@ public class Account {
         validateValue(value);
         synchronized (this){
             if (value.compareTo(this.balance) > 0)
-                throw new InsuffificentBalance("The balance is not sufficient for this withdrawal");
+                throw new InsuffificentBalance("Insufficient Balance");
             this.balance = this.balance.subtract(value);
         }
     }

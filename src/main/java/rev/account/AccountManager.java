@@ -7,6 +7,7 @@ import rev.account.command.WithdrawalCommand;
 import rev.account.exceptions.CommandFailureException;
 import rev.account.exceptions.DuplicateAccountIdException;
 import rev.account.exceptions.InvalidAccountId;
+import rev.account.exceptions.InvalidValueTypeException;
 import rev.account.generators.IdGenerator;
 import rev.account.storage.AccountStorage;
 import rev.models.TransferMoney;
@@ -65,21 +66,30 @@ public class AccountManager {
      * @return boolean
      * @throws InvalidAccountId throws if the account id is invalid.
      */
-    public boolean transferMoney(TransferMoney model, TransferMoneyCommand command) throws InvalidAccountId {
+    public boolean transferMoney(TransferMoney model, TransferMoneyCommand command) throws InvalidAccountId, InvalidValueTypeException, CommandFailureException {
         if (model == null || command == null)
             throw new IllegalArgumentException("The model or the command is null");
         if (model.getFrom() == null || model.getTo() == null)
             throw new InvalidAccountId("Account id for debitAccount: " + model.getFrom() + "or beneficiaryAccount: " + model.getTo() + " is invalid");
-        try{
-            command.getDepositCommand().setAccount(this.storage.getAccountById(model.getTo()));
-            command.getDepositCommand().setValue(new BigDecimal(model.getValue()));
-            command.getWithdrawalCommand().setAccount(this.storage.getAccountById(model.getFrom()));
-            command.getWithdrawalCommand().setValue(new BigDecimal(model.getValue()));
-            command.execute();
-            return true;
-        } catch (Exception ex){
-            return false;
+        if (valueError(model.getValue())){
+            throw new InvalidValueTypeException("The value must be a number");
         }
+        command.getDepositCommand().setAccount(this.storage.getAccountById(model.getTo()));
+        command.getDepositCommand().setValue(new BigDecimal(model.getValue()));
+        command.getWithdrawalCommand().setAccount(this.storage.getAccountById(model.getFrom()));
+        command.getWithdrawalCommand().setValue(new BigDecimal(model.getValue()));
+        command.execute();
+        return true;
+    }
+
+    private boolean valueError(String value) {
+        try {
+            new BigDecimal(value);
+        } catch (Exception ex){
+            ex.printStackTrace();
+            return true;
+        }
+        return false;
     }
 
     public void setIdGenerator(IdGenerator idGenerator) {

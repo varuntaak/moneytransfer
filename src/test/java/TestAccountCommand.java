@@ -17,14 +17,13 @@ import static org.mockito.Mockito.mock;
 
 /**
  * Created by i316946 on 17/9/19.
+ * Test account command
  */
 public class TestAccountCommand {
 
-    Injector injector = Guice.createInjector(new AccountsModule());
-    Account account1;
-    Account account2;
-    DepositCommand depositCommand;
-    WithdrawalCommand withdrawalCommand;
+    private Injector injector = Guice.createInjector(new AccountsModule());
+    private DepositCommand depositCommand;
+    private WithdrawalCommand withdrawalCommand;
 
 
     @Before

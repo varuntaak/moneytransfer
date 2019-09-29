@@ -2,29 +2,32 @@ package bdd;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
-import io.restassured.response.ExtractableResponse;
 import io.restassured.response.Response;
 import org.jbehave.core.annotations.Given;
+import org.jbehave.core.annotations.Named;
 import org.jbehave.core.annotations.Then;
 import org.jbehave.core.annotations.When;
 
 import static io.restassured.RestAssured.get;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 
 /**
  * Created by i316946 on 27/9/19.
+ * Transfer balance step for JBehave to test success transfer money API
  */
 public class TransferBalanceStep {
 
-    String accountA_id;
-    String accountB_id;
-    Response transfer_response;
+    private String accountA_id;
+    private String accountB_id;
+    private Response transfer_response;
 
     @Given("the server is up")
     public void checkServer(){
-        RestAssured.port = 8081;
+        RestAssured.port = Configs.port;
+        get(Configs.root).then().body(containsString("Server is up and running!"));
     }
 
     @Given("the account with name AccountA is created")
@@ -34,7 +37,7 @@ public class TransferBalanceStep {
                 "}";
         accountA_id = given().contentType(ContentType.JSON)
                 .body(payload)
-                .post("/createaccount")
+                .post(Configs.create_account_url)
                 .then()
                 .statusCode(200).extract().asString();
     }
@@ -46,40 +49,40 @@ public class TransferBalanceStep {
                 "}";
         accountB_id = given().contentType(ContentType.JSON)
                 .body(payload)
-                .post("/createaccount")
+                .post(Configs.create_account_url)
                 .then()
                 .statusCode(200).extract().asString();
     }
 
-    @When("the user transfer amount of 10 from AccountA to AccountB")
-    public void executeTransfer(){
+    @When("the user transfer $amount from AccountA to AccountB")
+    public void executeTransfer(@Named("amount") String amount){
         String payload = "{\n" +
                 "\t\"from\" : \"%s\",\n" +
                 "\t\"to\" : \"%s\",\n" +
-                "\t\"value\" : \"10\"\n" +
+                "\t\"value\" : \"%s\"\n" +
                 "}";
-        payload = String.format(payload, accountA_id, accountB_id);
+        payload = String.format(payload, accountA_id, accountB_id, amount);
         transfer_response = given().contentType(ContentType.JSON)
                 .body(payload)
-                .post("/transfermoney");
+                .post(Configs.transfer_url);
     }
 
-    @Then("the server full fill the request as Success")
-    public void checkIfRequestOK(){
-        transfer_response.then().statusCode(200);
+    @Then("the server response [status_code] and [body]")
+    public void checkIfRequestOK(@Named("status_code") int status_code, @Named("body") String body){
+        transfer_response.then().statusCode(status_code);
         String result = transfer_response.body().asString();
-        assertThat(result, equalTo("true"));
+        assertThat(result, equalTo(body));
     }
 
-    @Then("the account named AccountA is debited of amount 10")
-    public void checkAccountBalanceWithdrawal(){
-        String balance = get("/balance/" + accountA_id).body().asString();
-        assertThat(balance, equalTo("990"));
+    @Then("the account named AccountA has [new_balance_A]")
+    public void checkAccountBalanceWithdrawal(@Named("new_balance_A") String new_balance){
+        String balance = get(Configs.balance_url + accountA_id).body().asString();
+        assertThat(balance, equalTo(new_balance));
     }
 
-    @Then("the account named AccountB is credit with amount 10")
-    public void checkAccountBalanceDebit(){
-        String balance = get("/balance/" + accountB_id).body().asString();
-        assertThat(balance, equalTo("1010"));
+    @Then("the account named AccountB has [new_balance_B]")
+    public void checkAccountBalanceDebit(@Named("new_balance_B") String new_balance){
+        String balance = get(Configs.balance_url + accountB_id).body().asString();
+        assertThat(balance, equalTo(new_balance));
     }
 }

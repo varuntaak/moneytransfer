@@ -42,17 +42,17 @@ public class TestAccount {
     }
 
     @Test(expected = IllegalValueException.class)
-    public void testDepositOfIllegalValue(){
+    public void testDepositOfNullValue(){
         account.depositMoney(null);
     }
 
     @Test(expected = IllegalValueException.class)
-    public void testDepositOfIllegalValue2(){
+    public void testDepositOfDecimalLimit(){
         account.depositMoney(new BigDecimal("1.3423423"));
     }
 
     @Test(expected = IllegalValueException.class)
-    public void testDepositOfIllegalValue3(){
+    public void testDepositOfNegativeValue(){
         account.depositMoney(new BigDecimal("-1"));
     }
 
@@ -81,12 +81,12 @@ public class TestAccount {
     }
 
     @Test(expected = IllegalValueException.class)
-    public void testWithdrawalOfIllegalValue(){
+    public void testWithdrawalOfNullValue(){
         account.withdrawMoney(null);
     }
 
     @Test(expected = IllegalValueException.class)
-    public void testWithdrawalOfIllegalValue2(){
+    public void testWithdrawalOfDecimalLimit(){
         account.withdrawMoney(new BigDecimal(23423432.3423423));
     }
 
